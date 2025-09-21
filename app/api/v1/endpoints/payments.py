@@ -46,6 +46,7 @@ async def create_payment(
     background_tasks: BackgroundTasks = BackgroundTasks()
 ):
     """Record a payment for an invoice"""
+    logger.info("Creating payment", invoice_id=payment.invoice_id, amount=payment.amount, method=payment.payment_method)
     try:
         # Verify invoice exists
         invoice_response = invoices_table.get_item(Key={'invoice_id': payment.invoice_id})
@@ -333,6 +334,7 @@ async def get_invoice_payments(
     limit: int = Query(20, le=100)
 ):
     """Get all payments for an invoice"""
+    logger.info("Getting payments for invoice", invoice_id=invoice_id, skip=skip, limit=limit)
     try:
         # Query payments by invoice_id
         response = payments_table.scan(

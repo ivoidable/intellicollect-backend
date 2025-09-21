@@ -102,7 +102,8 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             path=request.url.path,
             query_params=dict(request.query_params),
             client_host=request.client.host if request.client else None,
-            user_agent=request.headers.get("User-Agent")
+            user_agent=request.headers.get("User-Agent"),
+            endpoint=f"{request.method} {request.url.path}"
         )
 
         # Process request
@@ -118,7 +119,8 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 method=request.method,
                 path=request.url.path,
                 status_code=response.status_code,
-                duration=round(duration, 3)
+                duration=round(duration, 3),
+                endpoint=f"{request.method} {request.url.path}"
             )
 
             # Add request ID to response headers
@@ -135,7 +137,8 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 path=request.url.path,
                 duration=round(duration, 3),
                 exception_type=type(e).__name__,
-                exception_message=str(e)
+                exception_message=str(e),
+                endpoint=f"{request.method} {request.url.path}"
             )
             raise
 

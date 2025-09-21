@@ -46,6 +46,7 @@ async def list_invoices(
     limit: int = Query(20, le=100),
 ):
     """List all invoices with optional filtering"""
+    logger.info("Listing invoices", customer_id=customer_id, status=status, payment_status=payment_status, skip=skip, limit=limit)
     try:
         # Build filter expression
         filter_expression = None
@@ -119,6 +120,7 @@ async def create_invoice(
     background_tasks: BackgroundTasks = BackgroundTasks()
 ):
     """Create a new invoice"""
+    logger.info("Creating invoice", customer_id=invoice.customer_id, amount=invoice.amount, due_date=invoice.due_date)
     try:
         # Verify customer exists
         customer_response = customers_table.get_item(Key={'customer_id': invoice.customer_id})

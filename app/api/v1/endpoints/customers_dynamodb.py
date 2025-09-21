@@ -63,6 +63,7 @@ async def list_customers(
     search: Optional[str] = None,
 ):
     """List all customers"""
+    logger.info("Getting customers list", skip=skip, limit=limit, search=search)
     try:
         # Build filter expression for search
         scan_kwargs = {}
@@ -104,6 +105,7 @@ async def list_customers(
             )
             customers.append(customer)
 
+        logger.info("Successfully retrieved customers", count=len(customers), total=len(items))
         return CustomerListResponse(
             customers=customers,
             total=len(items),
@@ -121,6 +123,7 @@ async def create_customer(
     background_tasks: BackgroundTasks = BackgroundTasks()
 ):
     """Create a new customer"""
+    logger.info("Creating new customer", email=customer.email, name=customer.name)
     try:
         # Generate customer ID
         customer_id = f"CUST-{uuid.uuid4().hex[:8].upper()}"
@@ -146,7 +149,7 @@ async def create_customer(
         # Save to DynamoDB
         customers_table.put_item(Item=customer_data)
 
-        logger.info(f"Customer {customer_id} created successfully")
+        logger.info("Customer created successfully", customer_id=customer_id, email=customer.email)
 
         # Calculate outstanding amount from invoices (will be 0 for new customer)
         outstanding_amount = await calculate_customer_outstanding_amount(customer_id)
