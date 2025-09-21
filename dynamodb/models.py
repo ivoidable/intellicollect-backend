@@ -129,9 +129,7 @@ class UserCompany(BaseEntity):
 
 class Customer(BaseEntity):
     """Customer model for billing"""
-    company_id: str
     customer_name: str
-    customer_company: Optional[str] = None
     email: EmailStr
     phone: Optional[str] = None
     address_line1: Optional[str] = None
@@ -175,7 +173,6 @@ class InvoiceItem(BaseModel):
 
 class Invoice(BaseEntity):
     """Invoice model"""
-    company_id: str
     customer_id: str
     invoice_number: str
     status: InvoiceStatus = InvoiceStatus.DRAFT
@@ -205,7 +202,6 @@ class Invoice(BaseEntity):
 
 class Payment(BaseEntity):
     """Payment model"""
-    company_id: str
     customer_id: str
     invoice_id: str
     payment_number: str
@@ -224,7 +220,6 @@ class Payment(BaseEntity):
 
 class RiskAssessment(BaseEntity):
     """AI Risk Assessment model"""
-    company_id: str
     customer_id: Optional[str] = None
     invoice_id: Optional[str] = None
     risk_level: RiskLevel
@@ -238,7 +233,6 @@ class RiskAssessment(BaseEntity):
 
 class AIInsight(BaseEntity):
     """AI-generated business insight model"""
-    company_id: str
     type: InsightType
     category: Optional[str] = None
     title: str
@@ -254,7 +248,6 @@ class AIInsight(BaseEntity):
 
 class Receipt(BaseEntity):
     """Receipt upload model"""
-    company_id: str
     invoice_id: Optional[str] = None
     file_url: str
     file_name: str
@@ -269,7 +262,6 @@ class Receipt(BaseEntity):
 
 class AuditLog(BaseEntity):
     """Audit trail model"""
-    company_id: Optional[str] = None
     user_id: Optional[str] = None
     entity_type: str
     entity_id: Optional[str] = None
@@ -280,8 +272,7 @@ class AuditLog(BaseEntity):
 
 
 class Setting(BaseEntity):
-    """Company settings model"""
-    company_id: str
+    """Settings model"""
     key: str
     value: Any
     category: Optional[str] = None
@@ -289,7 +280,6 @@ class Setting(BaseEntity):
 
 class APIToken(BaseEntity):
     """API token allocation model"""
-    company_id: str
     token_count: int = 10000
     tokens_used: int = 0
     tokens_remaining: int = 10000
@@ -305,7 +295,6 @@ class APIToken(BaseEntity):
 
 class TokenUsage(BaseEntity):
     """Token usage log model"""
-    company_id: str
     user_id: Optional[str] = None
     service: str
     tokens_consumed: int
@@ -315,7 +304,6 @@ class TokenUsage(BaseEntity):
 
 class Communication(BaseEntity):
     """Customer communication model"""
-    company_id: str
     customer_id: str
     invoice_id: Optional[str] = None
     type: str  # email, sms, call

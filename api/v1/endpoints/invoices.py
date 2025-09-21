@@ -1,338 +1,329 @@
-"""Invoice endpoints"""
+"""Invoice management endpoints using DynamoDB"""
 
 from typing import List, Optional
-from uuid import UUID
-from datetime import date, datetime
-from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_, func
+from datetime import datetime, date
+from fastapi import APIRouter, HTTPException, status, Query, BackgroundTasks
 import structlog
+import boto3
+from botocore.exceptions import ClientError
+import uuid
+import json
 
-from app.db.session import get_db
-from app.models.invoice import Invoice, InvoiceStatus
-from app.models.customer import Customer
 from app.schemas.invoice import (
     InvoiceCreate,
     InvoiceUpdate,
     InvoiceResponse,
-    InvoiceListResponse
+    InvoiceListResponse,
+    InvoiceStatus,
+    PaymentStatus
 )
-from app.services.aws.risk_assessment import RiskAssessmentService
-from app.services.aws.communication_engine import CommunicationEngine
-from app.services.event_processor import EventProcessor
-from app.core.security import get_current_user
+from app.core.config import settings
+from app.services.aws.event_bridge import EventBridgeService
 
 router = APIRouter()
 logger = structlog.get_logger()
 
+# Initialize AWS clients
+import os
+if settings.AWS_ACCESS_KEY_ID:
+    os.environ['AWS_ACCESS_KEY_ID'] = settings.AWS_ACCESS_KEY_ID
+if settings.AWS_SECRET_ACCESS_KEY:
+    os.environ['AWS_SECRET_ACCESS_KEY'] = settings.AWS_SECRET_ACCESS_KEY
+if settings.AWS_REGION:
+    os.environ['AWS_DEFAULT_REGION'] = settings.AWS_REGION
+
+dynamodb = boto3.resource('dynamodb', region_name=settings.AWS_REGION)
+invoices_table = dynamodb.Table(settings.DYNAMODB_INVOICES_TABLE)
+customers_table = dynamodb.Table(settings.DYNAMODB_CUSTOMERS_TABLE)
+
 
 @router.get("/", response_model=InvoiceListResponse)
 async def list_invoices(
-    db: AsyncSession = Depends(get_db),
+    customer_id: Optional[str] = Query(None, description="Filter by customer ID"),
+    status: Optional[InvoiceStatus] = Query(None, description="Filter by status"),
+    payment_status: Optional[PaymentStatus] = Query(None, description="Filter by payment status"),
     skip: int = Query(0, ge=0),
     limit: int = Query(20, le=100),
-    status: Optional[InvoiceStatus] = None,
-    customer_id: Optional[UUID] = None,
-    overdue_only: bool = False,
-    date_from: Optional[date] = None,
-    date_to: Optional[date] = None,
-    current_user=Depends(get_current_user)
 ):
     """List all invoices with optional filtering"""
+    logger.info("Listing invoices", customer_id=customer_id, status=status, payment_status=payment_status, skip=skip, limit=limit)
     try:
-        query = select(Invoice)
+        # Build filter expression
+        filter_expression = None
+        expression_attribute_values = {}
 
-        # Apply filters
-        filters = []
-        if status:
-            filters.append(Invoice.status == status)
         if customer_id:
-            filters.append(Invoice.customer_id == customer_id)
-        if overdue_only:
-            filters.append(Invoice.due_date < date.today())
-            filters.append(Invoice.status != InvoiceStatus.PAID)
-        if date_from:
-            filters.append(Invoice.invoice_date >= date_from)
-        if date_to:
-            filters.append(Invoice.invoice_date <= date_to)
+            filter_expression = "customer_id = :customer_id"
+            expression_attribute_values[":customer_id"] = customer_id
 
-        if filters:
-            query = query.where(and_(*filters))
+        if status:
+            status_filter = "invoice_status = :status"
+            expression_attribute_values[":status"] = status
+            filter_expression = f"{filter_expression} AND {status_filter}" if filter_expression else status_filter
 
-        # Count total
-        count_query = select(func.count()).select_from(Invoice)
-        if filters:
-            count_query = count_query.where(and_(*filters))
-        total_result = await db.execute(count_query)
-        total = total_result.scalar()
+        if payment_status:
+            payment_filter = "payment_status = :payment_status"
+            expression_attribute_values[":payment_status"] = payment_status
+            filter_expression = f"{filter_expression} AND {payment_filter}" if filter_expression else payment_filter
 
-        # Apply pagination and sorting
-        query = query.order_by(Invoice.created_at.desc()).offset(skip).limit(limit)
+        # Query DynamoDB
+        scan_kwargs = {}
+        if filter_expression:
+            scan_kwargs['FilterExpression'] = filter_expression
+            scan_kwargs['ExpressionAttributeValues'] = expression_attribute_values
 
-        result = await db.execute(query)
-        invoices = result.scalars().all()
+        response = invoices_table.scan(**scan_kwargs)
+        items = response.get('Items', [])
+
+        # Apply pagination
+        paginated_items = items[skip:skip + limit]
+
+        # Convert to response model
+        invoices = []
+        for item in paginated_items:
+            invoice = InvoiceResponse(
+                invoice_id=item['invoice_id'],
+                customer_id=item['customer_id'],
+                invoice_date=date.fromisoformat(item.get('invoice_date', item.get('created_timestamp', datetime.utcnow().isoformat())[:10])),
+                due_date=date.fromisoformat(item['due_date']),
+                amount=float(item.get('amount', 0)),
+                total_amount=float(item.get('total_amount', 0)),
+                currency=item.get('currency', 'USD'),
+                status=item.get('status', InvoiceStatus.DRAFT).lower() if item.get('status') else InvoiceStatus.DRAFT,
+                payment_status=item.get('payment_status', PaymentStatus.UNPAID).lower() if item.get('payment_status') else PaymentStatus.UNPAID,
+                risk_level=item.get('risk_level'),
+                risk_score=item.get('risk_score'),
+                created_timestamp=item.get('created_timestamp'),
+                paid_amount=float(item.get('paid_amount', 0)),
+                outstanding_amount=float(item.get('outstanding_amount', item.get('total_amount', 0))),
+                reminder_count=item.get('reminder_count', 0),
+                last_reminder_date=item.get('last_reminder_date'),
+                payment_date=item.get('payment_date'),
+                payment_reference=item.get('payment_reference')
+            )
+            invoices.append(invoice)
 
         return InvoiceListResponse(
-            invoices=[InvoiceResponse.from_orm(i) for i in invoices],
-            total=total,
+            invoices=invoices,
+            total=len(items),
             skip=skip,
             limit=limit
         )
     except Exception as e:
         logger.error("Failed to list invoices", error=str(e))
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve invoices"
-        )
-
-
-@router.get("/{invoice_id}", response_model=InvoiceResponse)
-async def get_invoice(
-    invoice_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
-    """Get a specific invoice by ID"""
-    query = select(Invoice).where(Invoice.id == invoice_id)
-    result = await db.execute(query)
-    invoice = result.scalar_one_or_none()
-
-    if not invoice:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Invoice {invoice_id} not found"
-        )
-
-    return InvoiceResponse.from_orm(invoice)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/", response_model=InvoiceResponse, status_code=status.HTTP_201_CREATED)
 async def create_invoice(
-    invoice_data: InvoiceCreate,
-    background_tasks: BackgroundTasks,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    invoice: InvoiceCreate,
+    background_tasks: BackgroundTasks = BackgroundTasks()
 ):
     """Create a new invoice"""
+    logger.info("Creating invoice", customer_id=invoice.customer_id, amount=invoice.amount, due_date=invoice.due_date)
     try:
         # Verify customer exists
-        customer_query = select(Customer).where(Customer.id == invoice_data.customer_id)
-        customer_result = await db.execute(customer_query)
-        customer = customer_result.scalar_one_or_none()
+        customer_response = customers_table.get_item(Key={'customer_id': invoice.customer_id})
+        if 'Item' not in customer_response:
+            raise HTTPException(status_code=404, detail="Customer not found")
 
-        if not customer:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Customer not found"
-            )
+        # Generate invoice ID
+        invoice_id = f"INV-{uuid.uuid4().hex[:8].upper()}"
 
-        # Generate invoice number
-        invoice_number = await _generate_invoice_number(db)
+        # Prepare invoice data
+        now = datetime.utcnow().isoformat()
+        from decimal import Decimal
+        invoice_data = {
+            'invoice_id': invoice_id,
+            'customer_id': invoice.customer_id,
+            'invoice_date': invoice.invoice_date.isoformat(),
+            'due_date': invoice.due_date.isoformat(),
+            'amount': Decimal(str(invoice.amount)),
+            'total_amount': Decimal(str(invoice.total_amount)),
+            'currency': invoice.currency,
+            'status': invoice.status,
+            'payment_status': invoice.payment_status,
+            'risk_level': invoice.risk_level,
+            'risk_score': Decimal(str(invoice.risk_score)) if invoice.risk_score else None,
+            'paid_amount': Decimal('0'),
+            'outstanding_amount': Decimal(str(invoice.total_amount)),
+            'reminder_count': 0,
+            'created_timestamp': now
+        }
 
-        # Calculate totals
-        subtotal = sum(item['quantity'] * item['unit_price'] for item in invoice_data.line_items)
-        tax_amount = subtotal * (invoice_data.tax_rate / 100) if invoice_data.tax_rate else 0
-        total_amount = subtotal + tax_amount - invoice_data.discount_amount
+        # Save to DynamoDB
+        invoices_table.put_item(Item=invoice_data)
 
-        # Create invoice
-        invoice = Invoice(
-            **invoice_data.dict(),
-            invoice_number=invoice_number,
-            subtotal=subtotal,
-            tax_amount=tax_amount,
-            total_amount=total_amount,
-            balance_due=total_amount
-        )
-        db.add(invoice)
-        await db.commit()
-        await db.refresh(invoice)
-
-        # Trigger AWS processes
-        event_processor = EventProcessor()
-
-        # Assess risk
-        risk_service = RiskAssessmentService()
+        # Publish event to EventBridge
         background_tasks.add_task(
-            risk_service.assess_invoice_risk,
-            invoice_id=str(invoice.id),
-            customer_id=str(customer.id),
-            amount=total_amount
+            publish_invoice_created_event,
+            invoice_id,
+            invoice.customer_id,
+            invoice.total_amount
         )
 
-        # Process invoice creation event
-        background_tasks.add_task(
-            event_processor.process_invoice_created,
-            invoice_id=str(invoice.id),
-            invoice_data=invoice_data.dict()
+        # Return response
+        return InvoiceResponse(
+            invoice_id=invoice_id,
+            customer_id=invoice.customer_id,
+            invoice_date=invoice.invoice_date,
+            due_date=invoice.due_date,
+            amount=invoice.amount,
+            total_amount=invoice.total_amount,
+            currency=invoice.currency,
+            status=invoice.status,
+            payment_status=invoice.payment_status,
+            risk_level=invoice.risk_level,
+            risk_score=invoice.risk_score,
+            created_timestamp=now,
+            paid_amount=0,
+            outstanding_amount=invoice.total_amount,
+            reminder_count=0,
+            last_reminder_date=None,
+            payment_date=None,
+            payment_reference=None
         )
-
-        # Send invoice notification
-        if invoice.status == InvoiceStatus.SENT:
-            comm_engine = CommunicationEngine()
-            background_tasks.add_task(
-                comm_engine.send_invoice_notification,
-                invoice_id=str(invoice.id),
-                customer_id=str(customer.id)
-            )
-
-        logger.info("Invoice created", invoice_id=str(invoice.id))
-        return InvoiceResponse.from_orm(invoice)
-
     except HTTPException:
         raise
     except Exception as e:
         logger.error("Failed to create invoice", error=str(e))
-        await db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create invoice"
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{invoice_id}", response_model=InvoiceResponse)
+async def get_invoice(invoice_id: str):
+    """Get invoice by ID"""
+    try:
+        response = invoices_table.get_item(Key={'invoice_id': invoice_id})
+        if 'Item' not in response:
+            raise HTTPException(status_code=404, detail="Invoice not found")
+
+        item = response['Item']
+        return InvoiceResponse(
+            invoice_id=item['invoice_id'],
+            customer_id=item['customer_id'],
+            invoice_date=date.fromisoformat(item.get('invoice_date', item.get('created_timestamp', datetime.utcnow().isoformat())[:10])),
+            due_date=date.fromisoformat(item['due_date']),
+            amount=float(item.get('amount', 0)),
+            total_amount=float(item.get('total_amount', 0)),
+            currency=item.get('currency', 'USD'),
+            status=item.get('status', InvoiceStatus.DRAFT).lower() if item.get('status') else InvoiceStatus.DRAFT,
+            payment_status=item.get('payment_status', PaymentStatus.UNPAID).lower() if item.get('payment_status') else PaymentStatus.UNPAID,
+            risk_level=item.get('risk_level'),
+            risk_score=item.get('risk_score'),
+            created_timestamp=item.get('created_timestamp'),
+            paid_amount=float(item.get('paid_amount', 0)),
+            outstanding_amount=float(item.get('outstanding_amount', item.get('total_amount', 0))),
+            reminder_count=item.get('reminder_count', 0),
+            last_reminder_date=item.get('last_reminder_date'),
+            payment_date=item.get('payment_date'),
+            payment_reference=item.get('payment_reference')
         )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to get invoice", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.put("/{invoice_id}", response_model=InvoiceResponse)
 async def update_invoice(
-    invoice_id: UUID,
-    invoice_data: InvoiceUpdate,
-    background_tasks: BackgroundTasks,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
+    invoice_id: str,
+    invoice_update: InvoiceUpdate,
+    background_tasks: BackgroundTasks = BackgroundTasks()
 ):
     """Update an existing invoice"""
     try:
         # Get existing invoice
-        query = select(Invoice).where(Invoice.id == invoice_id)
-        result = await db.execute(query)
-        invoice = result.scalar_one_or_none()
+        response = invoices_table.get_item(Key={'invoice_id': invoice_id})
+        if 'Item' not in response:
+            raise HTTPException(status_code=404, detail="Invoice not found")
 
-        if not invoice:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Invoice {invoice_id} not found"
-            )
+        existing_item = response['Item']
 
-        # Prevent updates to paid invoices
-        if invoice.status == InvoiceStatus.PAID:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cannot update paid invoice"
-            )
+        # Prepare update expression
+        update_expression = "SET updated_at = :updated_at"
+        expression_attribute_values = {":updated_at": datetime.utcnow().isoformat()}
 
-        # Update fields
-        update_data = invoice_data.dict(exclude_unset=True)
+        # Add fields to update
+        update_fields = invoice_update.dict(exclude_unset=True)
+        for field, value in update_fields.items():
+            if value is not None:
+                if field == 'status':
+                    update_expression += f", invoice_status = :{field}"
+                elif field == 'issue_date' or field == 'due_date':
+                    update_expression += f", {field} = :{field}"
+                    expression_attribute_values[f":{field}"] = value.isoformat()
+                elif field == 'items':
+                    update_expression += f", {field} = :{field}"
+                    expression_attribute_values[f":{field}"] = [item.dict() for item in value]
+                else:
+                    update_expression += f", {field} = :{field}"
+                    expression_attribute_values[f":{field}"] = value
 
-        # Recalculate totals if line items changed
-        if 'line_items' in update_data:
-            subtotal = sum(item['quantity'] * item['unit_price'] for item in update_data['line_items'])
-            tax_rate = update_data.get('tax_rate', invoice.tax_rate)
-            tax_amount = subtotal * (tax_rate / 100) if tax_rate else 0
-            discount_amount = update_data.get('discount_amount', invoice.discount_amount)
-            total_amount = subtotal + tax_amount - discount_amount
+        # Update outstanding amount if payment status changed
+        if 'payment_status' in update_fields or 'total_amount' in update_fields:
+            paid_amount = float(existing_item.get('paid_amount', 0))
+            total_amount = update_fields.get('total_amount', existing_item.get('total_amount', 0))
+            outstanding = total_amount - paid_amount
+            update_expression += ", outstanding_amount = :outstanding_amount"
+            expression_attribute_values[":outstanding_amount"] = outstanding
 
-            update_data['subtotal'] = subtotal
-            update_data['tax_amount'] = tax_amount
-            update_data['total_amount'] = total_amount
-            update_data['balance_due'] = total_amount - invoice.amount_paid
+        # Update in DynamoDB
+        invoices_table.update_item(
+            Key={'invoice_id': invoice_id},
+            UpdateExpression=update_expression,
+            ExpressionAttributeValues=expression_attribute_values
+        )
 
-        for field, value in update_data.items():
-            setattr(invoice, field, value)
-
-        await db.commit()
-        await db.refresh(invoice)
-
-        # Trigger status change events
-        if 'status' in update_data:
-            event_processor = EventProcessor()
-            background_tasks.add_task(
-                event_processor.process_invoice_status_changed,
-                invoice_id=str(invoice.id),
-                old_status=str(invoice.status),
-                new_status=str(update_data['status'])
-            )
-
-        logger.info("Invoice updated", invoice_id=str(invoice.id))
-        return InvoiceResponse.from_orm(invoice)
-
+        # Get updated invoice
+        return await get_invoice(invoice_id)
     except HTTPException:
         raise
     except Exception as e:
         logger.error("Failed to update invoice", error=str(e))
-        await db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update invoice"
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/{invoice_id}/send-reminder")
-async def send_invoice_reminder(
-    invoice_id: UUID,
-    background_tasks: BackgroundTasks,
-    db: AsyncSession = Depends(get_db),
-    current_user=Depends(get_current_user)
-):
-    """Send payment reminder for an invoice"""
+@router.delete("/{invoice_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_invoice(invoice_id: str):
+    """Delete an invoice"""
     try:
-        # Get invoice with customer
-        query = select(Invoice).where(Invoice.id == invoice_id)
-        result = await db.execute(query)
-        invoice = result.scalar_one_or_none()
+        # Check if invoice exists
+        response = invoices_table.get_item(Key={'invoice_id': invoice_id})
+        if 'Item' not in response:
+            raise HTTPException(status_code=404, detail="Invoice not found")
 
-        if not invoice:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Invoice {invoice_id} not found"
-            )
+        # Delete from DynamoDB
+        invoices_table.delete_item(Key={'invoice_id': invoice_id})
 
-        if invoice.status == InvoiceStatus.PAID:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invoice already paid"
-            )
-
-        # Send reminder
-        comm_engine = CommunicationEngine()
-        background_tasks.add_task(
-            comm_engine.send_payment_reminder,
-            invoice_id=str(invoice.id),
-            customer_id=str(invoice.customer_id),
-            urgency="normal" if invoice.due_date >= date.today() else "high"
-        )
-
-        # Update reminder count
-        invoice.reminder_count += 1
-        invoice.last_reminder_date = date.today()
-        await db.commit()
-
-        return {
-            "message": "Payment reminder sent",
-            "invoice_id": str(invoice_id),
-            "reminder_count": invoice.reminder_count
-        }
-
+        logger.info(f"Invoice {invoice_id} deleted successfully")
     except HTTPException:
         raise
     except Exception as e:
-        logger.error("Failed to send reminder", error=str(e))
-        await db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to send reminder"
+        logger.error("Failed to delete invoice", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+async def publish_invoice_created_event(invoice_id: str, customer_id: str, amount: float):
+    """Publish invoice created event to EventBridge"""
+    try:
+        event_bridge = EventBridgeService()
+        await event_bridge.initialize()
+
+        event_data = {
+            'invoice_id': invoice_id,
+            'customer_id': customer_id,
+            'amount': amount,
+            'timestamp': datetime.utcnow().isoformat()
+        }
+
+        await event_bridge.publish_event(
+            source='billing.invoice.created',
+            detail_type='Invoice Created',
+            detail=event_data
         )
 
-
-async def _generate_invoice_number(db: AsyncSession) -> str:
-    """Generate unique invoice number"""
-    # Get latest invoice number
-    query = select(func.max(Invoice.invoice_number))
-    result = await db.execute(query)
-    latest = result.scalar()
-
-    if latest:
-        # Extract number and increment
-        try:
-            num = int(latest.split('-')[-1])
-            return f"INV-{datetime.now().year}-{num + 1:06d}"
-        except:
-            pass
-
-    return f"INV-{datetime.now().year}-000001"
+        logger.info(f"Published invoice created event for {invoice_id}")
+    except Exception as e:
+        logger.error(f"Failed to publish event: {str(e)}")

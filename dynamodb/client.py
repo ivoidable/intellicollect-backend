@@ -70,6 +70,15 @@ class DynamoDBClient:
     async def initialize(self):
         """Initialize DynamoDB connections"""
         try:
+            # Set environment variables for boto3
+            import os
+            if settings.AWS_ACCESS_KEY_ID:
+                os.environ['AWS_ACCESS_KEY_ID'] = settings.AWS_ACCESS_KEY_ID
+            if settings.AWS_SECRET_ACCESS_KEY:
+                os.environ['AWS_SECRET_ACCESS_KEY'] = settings.AWS_SECRET_ACCESS_KEY
+            if self.region:
+                os.environ['AWS_DEFAULT_REGION'] = self.region
+
             # Create session
             session = boto3.Session(
                 aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
@@ -104,7 +113,7 @@ class DynamoDBClient:
 
         for table_name in [TableNames.MAIN, TableNames.AUDIT, TableNames.METRICS]:
             try:
-                await loop.run_in_executor(None, self.client.describe_table, TableName=table_name)
+                await loop.run_in_executor(None, lambda: self.client.describe_table(TableName=table_name))
                 logger.info(f"Table {table_name} verified")
             except ClientError as e:
                 if e.response['Error']['Code'] == 'ResourceNotFoundException':
@@ -129,11 +138,11 @@ class DynamoDBClient:
             raise ValueError(f"Unknown table: {table_name}")
 
         loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, self.client.create_table, **schema)
+        await loop.run_in_executor(None, lambda: self.client.create_table(**schema))
 
         # Wait for table to be active
         waiter = self.client.get_waiter('table_exists')
-        await loop.run_in_executor(None, waiter.wait, TableName=table_name)
+        await loop.run_in_executor(None, lambda: waiter.wait(TableName=table_name))
 
         logger.info(f"Table {table_name} created successfully")
 

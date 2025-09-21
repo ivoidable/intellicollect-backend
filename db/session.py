@@ -12,14 +12,23 @@ from app.db.base import Base
 logger = structlog.get_logger()
 
 # Create async engine
-engine = create_async_engine(
-    settings.database_url_async,
-    echo=settings.DEBUG,
-    pool_size=settings.DATABASE_POOL_SIZE,
-    max_overflow=settings.DATABASE_MAX_OVERFLOW,
-    poolclass=QueuePool if settings.APP_ENV == "production" else NullPool,
-    pool_pre_ping=True,  # Verify connections before using them
-)
+if settings.APP_ENV == "production":
+    engine = create_async_engine(
+        settings.database_url_async,
+        echo=settings.DEBUG,
+        pool_size=settings.DATABASE_POOL_SIZE,
+        max_overflow=settings.DATABASE_MAX_OVERFLOW,
+        poolclass=QueuePool,
+        pool_pre_ping=True,  # Verify connections before using them
+    )
+else:
+    # NullPool doesn't support pool_size and max_overflow
+    engine = create_async_engine(
+        settings.database_url_async,
+        echo=settings.DEBUG,
+        poolclass=NullPool,
+        pool_pre_ping=True,  # Verify connections before using them
+    )
 
 # Create async session factory
 AsyncSessionLocal = async_sessionmaker(

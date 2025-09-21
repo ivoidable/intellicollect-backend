@@ -115,8 +115,7 @@ class AWSServiceBase:
                 loop = asyncio.get_event_loop()
                 result = await loop.run_in_executor(
                     None,
-                    operation_func,
-                    **params
+                    lambda: operation_func(**params)
                 )
                 return result
 
