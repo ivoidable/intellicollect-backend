@@ -73,7 +73,8 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7, env="REFRESH_TOKEN_EXPIRE_DAYS")
 
     # CORS
-    CORS_ORIGINS: List[str] = Field(default=["http://localhost:3000", "http://localhost:3001", "http://localhost:5173", "http://localhost:8080"], env="CORS_ORIGINS")
+    CORS_ORIGINS: List[str] = Field(default=["*", "https://main.d3jvss61vklbou.amplifyapp.com"], env="CORS_ORIGINS")
+    
     CORS_ALLOW_CREDENTIALS: bool = Field(default=True, env="CORS_ALLOW_CREDENTIALS")
 
     # Monitoring
