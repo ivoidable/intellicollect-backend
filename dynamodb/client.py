@@ -97,8 +97,7 @@ class DynamoDBClient:
                 TableNames.METRICS: self.resource.Table(TableNames.METRICS)
             }
 
-            # Verify tables exist
-            await self._verify_tables()
+            # Skip table verification - using existing AWS tables
 
             self._initialized = True
             logger.info("DynamoDB client initialized successfully")

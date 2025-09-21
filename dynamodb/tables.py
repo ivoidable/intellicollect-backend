@@ -70,11 +70,7 @@ MAIN_TABLE_SCHEMA = {
                 {"AttributeName": "GSI1PK", "KeyType": "HASH"},
                 {"AttributeName": "GSI1SK", "KeyType": "RANGE"}
             ],
-            "Projection": {"ProjectionType": "ALL"},
-            "ProvisionedThroughput": {
-                "ReadCapacityUnits": 5,
-                "WriteCapacityUnits": 5
-            }
+            "Projection": {"ProjectionType": "ALL"}
         },
         {
             "IndexName": GSINames.GSI2,
@@ -82,11 +78,7 @@ MAIN_TABLE_SCHEMA = {
                 {"AttributeName": "GSI2PK", "KeyType": "HASH"},
                 {"AttributeName": "GSI2SK", "KeyType": "RANGE"}
             ],
-            "Projection": {"ProjectionType": "ALL"},
-            "ProvisionedThroughput": {
-                "ReadCapacityUnits": 5,
-                "WriteCapacityUnits": 5
-            }
+            "Projection": {"ProjectionType": "ALL"}
         },
         {
             "IndexName": GSINames.GSI3,
@@ -94,11 +86,7 @@ MAIN_TABLE_SCHEMA = {
                 {"AttributeName": "GSI3PK", "KeyType": "HASH"},
                 {"AttributeName": "GSI3SK", "KeyType": "RANGE"}
             ],
-            "Projection": {"ProjectionType": "ALL"},
-            "ProvisionedThroughput": {
-                "ReadCapacityUnits": 5,
-                "WriteCapacityUnits": 5
-            }
+            "Projection": {"ProjectionType": "ALL"}
         },
         {
             "IndexName": GSINames.GSI4,
@@ -106,11 +94,7 @@ MAIN_TABLE_SCHEMA = {
                 {"AttributeName": "GSI4PK", "KeyType": "HASH"},
                 {"AttributeName": "GSI4SK", "KeyType": "RANGE"}
             ],
-            "Projection": {"ProjectionType": "ALL"},
-            "ProvisionedThroughput": {
-                "ReadCapacityUnits": 5,
-                "WriteCapacityUnits": 5
-            }
+            "Projection": {"ProjectionType": "ALL"}
         },
         {
             "IndexName": GSINames.GSI5,
@@ -118,11 +102,7 @@ MAIN_TABLE_SCHEMA = {
                 {"AttributeName": "GSI5PK", "KeyType": "HASH"},
                 {"AttributeName": "GSI5SK", "KeyType": "RANGE"}
             ],
-            "Projection": {"ProjectionType": "ALL"},
-            "ProvisionedThroughput": {
-                "ReadCapacityUnits": 5,
-                "WriteCapacityUnits": 5
-            }
+            "Projection": {"ProjectionType": "ALL"}
         }
     ],
     "BillingMode": "PAY_PER_REQUEST",  # On-demand billing
@@ -156,11 +136,7 @@ AUDIT_TABLE_SCHEMA = {
                 {"AttributeName": "UserID", "KeyType": "HASH"},
                 {"AttributeName": "SK", "KeyType": "RANGE"}
             ],
-            "Projection": {"ProjectionType": "ALL"},
-            "ProvisionedThroughput": {
-                "ReadCapacityUnits": 5,
-                "WriteCapacityUnits": 5
-            }
+            "Projection": {"ProjectionType": "ALL"}
         },
         {
             "IndexName": "EntityIndex",
@@ -168,11 +144,7 @@ AUDIT_TABLE_SCHEMA = {
                 {"AttributeName": "EntityType", "KeyType": "HASH"},
                 {"AttributeName": "SK", "KeyType": "RANGE"}
             ],
-            "Projection": {"ProjectionType": "ALL"},
-            "ProvisionedThroughput": {
-                "ReadCapacityUnits": 5,
-                "WriteCapacityUnits": 5
-            }
+            "Projection": {"ProjectionType": "ALL"}
         }
     ],
     "BillingMode": "PAY_PER_REQUEST",
