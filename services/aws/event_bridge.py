@@ -5,8 +5,8 @@ from datetime import datetime
 import json
 import structlog
 
-from app.services.aws.base import AWSServiceBase, aws_error_handler
-from app.core.config import settings
+from services.aws.base import AWSServiceBase, aws_error_handler
+from core.config import settings
 
 logger = structlog.get_logger()
 

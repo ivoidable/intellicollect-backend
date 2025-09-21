@@ -7,7 +7,7 @@ import uuid
 import enum
 from datetime import date
 
-from app.db.base import Base
+from db.base import Base
 
 
 class InvoiceStatus(str, enum.Enum):

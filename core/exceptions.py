@@ -185,7 +185,7 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
     )
 
     # Don't expose internal errors in production
-    from app.core.config import settings
+    from core.config import settings
     if settings.DEBUG:
         details = {
             "exception_type": type(exc).__name__,

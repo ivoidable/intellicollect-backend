@@ -7,17 +7,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_, func
 import structlog
 
-from app.db.session import get_db
-from app.models.customer import Customer, CustomerStatus, RiskLevel
-from app.schemas.customer import (
+from db.session import get_db
+from models.customer import Customer, CustomerStatus, RiskLevel
+from schemas.customer import (
     CustomerCreate,
     CustomerUpdate,
     CustomerResponse,
     CustomerListResponse
 )
-from app.services.aws.customer_intelligence import CustomerIntelligenceService
-from app.services.event_processor import EventProcessor
-from app.core.security import get_current_user
+from services.aws.customer_intelligence import CustomerIntelligenceService
+from services.event_processor import EventProcessor
+from core.security import get_current_user
 
 router = APIRouter()
 logger = structlog.get_logger()

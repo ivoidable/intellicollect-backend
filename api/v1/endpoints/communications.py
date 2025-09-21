@@ -9,7 +9,7 @@ from botocore.exceptions import ClientError
 import uuid
 import json
 
-from app.schemas.communication import (
+from schemas.communication import (
     CommunicationCreate,
     CommunicationResponse,
     CommunicationHistory,
@@ -17,7 +17,7 @@ from app.schemas.communication import (
     CommunicationType,
     EmailTemplate
 )
-from app.core.config import settings
+from core.config import settings
 
 router = APIRouter()
 logger = structlog.get_logger()

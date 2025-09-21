@@ -4,10 +4,10 @@ from typing import List, Optional, Dict, Any
 from boto3.dynamodb.conditions import Key, Attr
 import structlog
 
-from app.dynamodb.client import dynamodb_client
-from app.dynamodb.tables import TableNames, EntityTypes, GSINames, create_key_structure, create_gsi_keys
-from app.dynamodb.models import Customer
-from app.core.exceptions import DatabaseError
+from dynamodb.client import dynamodb_client
+from dynamodb.tables import TableNames, EntityTypes, GSINames, create_key_structure, create_gsi_keys
+from dynamodb.models import Customer
+from core.exceptions import DatabaseError
 
 logger = structlog.get_logger()
 

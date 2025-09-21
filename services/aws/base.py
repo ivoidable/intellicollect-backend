@@ -8,7 +8,7 @@ from functools import wraps
 import asyncio
 import time
 
-from app.core.config import settings
+from core.config import settings
 
 logger = structlog.get_logger()
 

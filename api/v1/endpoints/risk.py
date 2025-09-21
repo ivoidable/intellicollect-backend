@@ -9,16 +9,16 @@ from botocore.exceptions import ClientError
 import uuid
 import json
 
-from app.schemas.risk import (
+from schemas.risk import (
     RiskAssessmentCreate,
     RiskAssessmentResponse,
     RiskHistory,
     RiskLevel,
     RiskFactors
 )
-from app.core.config import settings
-from app.services.aws.event_bridge import EventBridgeService
-from app.services.aws.api_gateway import api_gateway_service
+from core.config import settings
+from services.aws.event_bridge import EventBridgeService
+from services.aws.api_gateway import api_gateway_service
 
 router = APIRouter()
 logger = structlog.get_logger()

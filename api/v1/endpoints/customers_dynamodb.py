@@ -8,13 +8,13 @@ import boto3
 from botocore.exceptions import ClientError
 import uuid
 
-from app.schemas.customer import (
+from schemas.customer import (
     CustomerCreate,
     CustomerUpdate,
     CustomerResponse,
     CustomerListResponse
 )
-from app.core.config import settings
+from core.config import settings
 
 router = APIRouter()
 logger = structlog.get_logger()

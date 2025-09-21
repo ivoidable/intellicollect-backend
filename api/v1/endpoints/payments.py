@@ -10,7 +10,7 @@ import uuid
 import json
 from io import BytesIO
 
-from app.schemas.payment import (
+from schemas.payment import (
     PaymentCreate,
     PaymentResponse,
     PaymentPlan,
@@ -18,9 +18,9 @@ from app.schemas.payment import (
     TransactionStatus,
     PaymentPlanStatus
 )
-from app.core.config import settings
-from app.services.aws.event_bridge import EventBridgeService
-from app.services.aws.api_gateway import api_gateway_service
+from core.config import settings
+from services.aws.event_bridge import EventBridgeService
+from services.aws.api_gateway import api_gateway_service
 
 router = APIRouter()
 logger = structlog.get_logger()

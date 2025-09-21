@@ -8,15 +8,15 @@ from starlette.middleware.base import BaseHTTPMiddleware
 import uvicorn
 import structlog
 
-from app.core.config import settings
-from app.core.logging import setup_logging, LoggingMiddleware
-from app.core.exceptions import setup_exception_handlers
-from app.api.v1.router import api_router
-from app.dynamodb.client import dynamodb_client
-from app.services.aws.event_bridge import EventBridgeService
-from app.services.cache import CacheService
-from app.middleware.rate_limit import RateLimitMiddleware
-from app.middleware.error_handler import ErrorHandlerMiddleware
+from core.config import settings
+from core.logging import setup_logging, LoggingMiddleware
+from core.exceptions import setup_exception_handlers
+from api.v1.router import api_router
+from dynamodb.client import dynamodb_client
+from services.aws.event_bridge import EventBridgeService
+# from services.cache import CacheService  # TODO: Create cache service
+# from middleware.rate_limit import RateLimitMiddleware  # TODO: Create rate limit middleware
+# from middleware.error_handler import ErrorHandlerMiddleware  # TODO: Create error handler middleware
 
 
 # Configure structured logging
@@ -34,8 +34,8 @@ async def lifespan(app: FastAPI):
     await dynamodb_client.initialize()
 
     # Initialize cache
-    cache_service = CacheService()
-    await cache_service.initialize()
+    # cache_service = CacheService()  # TODO: Implement cache service
+    # await cache_service.initialize()
 
     # Initialize AWS services
     event_bridge = EventBridgeService()
@@ -52,7 +52,7 @@ async def lifespan(app: FastAPI):
     await dynamodb_client.close()
 
     # Close cache connections
-    await cache_service.close()
+    # await cache_service.close()  # TODO: Implement cache service
 
     # Cleanup AWS services
     await event_bridge.close()
@@ -90,10 +90,10 @@ def create_application() -> FastAPI:
     )
 
     # 3. Rate Limiting
-    app.add_middleware(RateLimitMiddleware)
+    # app.add_middleware(RateLimitMiddleware)  # TODO: Implement rate limiting middleware
 
     # 4. Error Handling
-    app.add_middleware(ErrorHandlerMiddleware)
+    # app.add_middleware(ErrorHandlerMiddleware)  # TODO: Implement error handler middleware
 
     # 5. Request Logging
     app.add_middleware(LoggingMiddleware)
@@ -133,7 +133,7 @@ app = create_application()
 
 if __name__ == "__main__":
     uvicorn.run(
-        "app.main:app",
+        "main:app",
         host=settings.HOST,
         port=settings.PORT,
         reload=settings.DEBUG,

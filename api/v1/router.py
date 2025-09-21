@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import (
+from api.v1.endpoints import (
     customers_dynamodb,
     invoices,
     payments,

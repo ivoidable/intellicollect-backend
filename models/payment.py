@@ -6,8 +6,8 @@ from sqlalchemy.dialects.postgresql import UUID
 import uuid
 import enum
 
-from app.db.base import Base
-from app.models.invoice import PaymentMethod
+from db.base import Base
+from models.invoice import PaymentMethod
 
 
 class PaymentStatus(str, enum.Enum):

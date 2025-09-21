@@ -5,7 +5,7 @@ Test script for AWS API Gateway integration
 
 import asyncio
 import json
-from app.services.aws.api_gateway import api_gateway_service
+from services.aws.api_gateway import api_gateway_service
 
 
 async def test_api_gateway_service():
@@ -83,15 +83,15 @@ async def test_endpoints_integration():
 
     try:
         # Test import of modified endpoints
-        from app.api.v1.endpoints.payments import router as payments_router
-        from app.api.v1.endpoints.risk import router as risk_router
+        from api.v1.endpoints.payments import router as payments_router
+        from api.v1.endpoints.risk import router as risk_router
 
         print("✓ Payment endpoints with API Gateway integration imported successfully")
         print("✓ Risk endpoints with API Gateway integration imported successfully")
 
         # Check that the api_gateway_service is accessible
-        from app.api.v1.endpoints.payments import api_gateway_service as payments_api_service
-        from app.api.v1.endpoints.risk import api_gateway_service as risk_api_service
+        from api.v1.endpoints.payments import api_gateway_service as payments_api_service
+        from api.v1.endpoints.risk import api_gateway_service as risk_api_service
 
         print("✓ API Gateway service accessible from payment endpoints")
         print("✓ API Gateway service accessible from risk endpoints")

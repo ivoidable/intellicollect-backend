@@ -7,7 +7,7 @@ import uuid
 import enum
 from datetime import datetime
 
-from app.db.base import Base
+from db.base import Base
 
 
 class CommunicationType(str, enum.Enum):

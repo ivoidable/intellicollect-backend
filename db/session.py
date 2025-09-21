@@ -6,8 +6,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool, QueuePool
 import structlog
 
-from app.core.config import settings
-from app.db.base import Base
+from core.config import settings
+from db.base import Base
 
 logger = structlog.get_logger()
 

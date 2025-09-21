@@ -5,9 +5,9 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime, timedelta
 import structlog
 
-from app.services.aws.base import AWSServiceBase, aws_error_handler
-from app.core.config import settings
-from app.services.cache import CacheService
+from services.aws.base import AWSServiceBase, aws_error_handler
+from core.config import settings
+from services.cache import CacheService
 
 logger = structlog.get_logger()
 

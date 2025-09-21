@@ -14,8 +14,8 @@ from datetime import datetime
 import asyncio
 from functools import wraps
 
-from app.core.config import settings
-from app.dynamodb.tables import TableNames, EntityTypes, GSINames, create_key_structure, create_gsi_keys
+from core.config import settings
+from dynamodb.tables import TableNames, EntityTypes, GSINames, create_key_structure, create_gsi_keys
 
 logger = structlog.get_logger()
 
@@ -125,7 +125,7 @@ class DynamoDBClient:
     async def _create_table(self, table_name: str):
         """Create a DynamoDB table if it doesn't exist"""
         # Import table schemas
-        from app.dynamodb.tables import MAIN_TABLE_SCHEMA, AUDIT_TABLE_SCHEMA, METRICS_TABLE_SCHEMA
+        from dynamodb.tables import MAIN_TABLE_SCHEMA, AUDIT_TABLE_SCHEMA, METRICS_TABLE_SCHEMA
 
         schemas = {
             TableNames.MAIN: MAIN_TABLE_SCHEMA,

@@ -9,7 +9,7 @@ from botocore.exceptions import ClientError
 import uuid
 import json
 
-from app.schemas.invoice import (
+from schemas.invoice import (
     InvoiceCreate,
     InvoiceUpdate,
     InvoiceResponse,
@@ -17,8 +17,8 @@ from app.schemas.invoice import (
     InvoiceStatus,
     PaymentStatus
 )
-from app.core.config import settings
-from app.services.aws.event_bridge import EventBridgeService
+from core.config import settings
+from services.aws.event_bridge import EventBridgeService
 
 router = APIRouter()
 logger = structlog.get_logger()

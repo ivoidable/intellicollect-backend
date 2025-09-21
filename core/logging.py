@@ -11,7 +11,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 import time
 import uuid
 
-from app.core.config import settings
+from core.config import settings
 
 
 def setup_logging():

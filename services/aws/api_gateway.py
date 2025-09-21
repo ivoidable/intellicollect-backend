@@ -7,8 +7,8 @@ import structlog
 import aiohttp
 from datetime import datetime
 
-from app.core.config import settings
-from app.services.aws.base import AWSServiceBase, aws_error_handler
+from core.config import settings
+from services.aws.base import AWSServiceBase, aws_error_handler
 
 logger = structlog.get_logger()
 

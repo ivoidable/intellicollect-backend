@@ -8,7 +8,7 @@ import boto3
 from botocore.exceptions import ClientError
 from decimal import Decimal
 
-from app.schemas.analytics import (
+from schemas.analytics import (
     DashboardResponse,
     RevenueMetrics,
     CustomerMetrics,
@@ -17,7 +17,7 @@ from app.schemas.analytics import (
     TrendAnalysis,
     CustomerAnalytics
 )
-from app.core.config import settings
+from core.config import settings
 
 router = APIRouter()
 logger = structlog.get_logger()
