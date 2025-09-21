@@ -4,8 +4,8 @@ uvicorn[standard]==0.35.0
 python-multipart==0.0.20
 
 # AWS Integration & DynamoDB
-boto3==1.40.33
-aioboto3==14.0.0
+boto3==1.40.35
+aioboto3==15.1.0
 boto3-stubs[dynamodb]==1.40.33
 
 # Authentication & Security
