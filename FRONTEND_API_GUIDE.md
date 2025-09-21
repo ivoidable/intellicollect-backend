@@ -17,8 +17,8 @@
    ```
 
 ### Frontend Development
-- **Base API URL:** `http://localhost:8001/api/v1`
-- **API Documentation:** `http://localhost:8001/api/v1/docs` (Interactive Swagger UI)
+- **Base API URL:** `http://localhost:8001/api`
+- **API Documentation:** `http://localhost:8001/api/docs` (Interactive Swagger UI)
 - **CORS:** Pre-configured for ports `3000`, `3001`, `5173`, `8080`
 
 ---
@@ -57,7 +57,7 @@ const health = await fetch('http://localhost:8001/health');
 
 ### Get All Customers
 ```http
-GET /api/v1/customers/
+GET /api/customers/
 ```
 
 **Query Parameters:**
@@ -95,7 +95,7 @@ GET /api/v1/customers/
 
 ### Create Customer
 ```http
-POST /api/v1/customers/
+POST /api/customers/
 ```
 
 **Request Body:**
@@ -112,24 +112,24 @@ POST /api/v1/customers/
 
 ### Get Single Customer
 ```http
-GET /api/v1/customers/{customer_id}
+GET /api/customers/{customer_id}
 ```
 
 ### Update Customer
 ```http
-PUT /api/v1/customers/{customer_id}
+PUT /api/customers/{customer_id}
 ```
 
 ### Delete Customer
 ```http
-DELETE /api/v1/customers/{customer_id}
+DELETE /api/customers/{customer_id}
 ```
 
 **Frontend Example:**
 ```javascript
 // Create customer
 const createCustomer = async (customerData) => {
-  const response = await fetch('http://localhost:8001/api/v1/customers/', {
+  const response = await fetch('http://localhost:8001/api/customers/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(customerData)
@@ -145,7 +145,7 @@ const getCustomers = async (page = 0, limit = 20, search = '') => {
     ...(search && { search })
   });
 
-  const response = await fetch(`http://localhost:8001/api/v1/customers/?${params}`);
+  const response = await fetch(`http://localhost:8001/api/customers/?${params}`);
   return response.json();
 };
 ```
@@ -156,7 +156,7 @@ const getCustomers = async (page = 0, limit = 20, search = '') => {
 
 ### Get All Invoices
 ```http
-GET /api/v1/invoices/
+GET /api/invoices/
 ```
 
 **Query Parameters:**
@@ -198,7 +198,7 @@ GET /api/v1/invoices/
 
 ### Create Invoice
 ```http
-POST /api/v1/invoices/
+POST /api/invoices/
 ```
 
 **Request Body:**
@@ -217,9 +217,9 @@ POST /api/v1/invoices/
 
 ### Get/Update/Delete Single Invoice
 ```http
-GET /api/v1/invoices/{invoice_id}
-PUT /api/v1/invoices/{invoice_id}
-DELETE /api/v1/invoices/{invoice_id}
+GET /api/invoices/{invoice_id}
+PUT /api/invoices/{invoice_id}
+DELETE /api/invoices/{invoice_id}
 ```
 
 ---
@@ -228,7 +228,7 @@ DELETE /api/v1/invoices/{invoice_id}
 
 ### Create Payment
 ```http
-POST /api/v1/payments/
+POST /api/payments/
 ```
 
 **Request Body:**
@@ -250,12 +250,12 @@ POST /api/v1/payments/
 
 ### Get Invoice Payments
 ```http
-GET /api/v1/payments/invoice/{invoice_id}/payments
+GET /api/payments/invoice/{invoice_id}/payments
 ```
 
 ### Upload Receipt
 ```http
-POST /api/v1/payments/upload-receipt
+POST /api/payments/upload-receipt
 ```
 
 **Form Data:**
@@ -269,7 +269,7 @@ POST /api/v1/payments/upload-receipt
 
 ### Quick Summary Stats
 ```http
-GET /api/v1/analytics/summary
+GET /api/analytics/summary
 ```
 
 **Response:**
@@ -286,19 +286,19 @@ GET /api/v1/analytics/summary
 
 ### Dashboard Analytics
 ```http
-GET /api/v1/analytics/dashboard?period_days=30
+GET /api/analytics/dashboard?period_days=30
 ```
 
 **Response:** Comprehensive metrics including revenue, customer, invoice, and risk metrics.
 
 ### Revenue Trend
 ```http
-GET /api/v1/analytics/revenue/trend?period=monthly&months=6
+GET /api/analytics/revenue/trend?period=monthly&months=6
 ```
 
 ### Customer Analytics
 ```http
-GET /api/v1/analytics/customer/{customer_id}/analytics
+GET /api/analytics/customer/{customer_id}/analytics
 ```
 
 ---
@@ -307,12 +307,12 @@ GET /api/v1/analytics/customer/{customer_id}/analytics
 
 ### Send Communication
 ```http
-POST /api/v1/communications/send
+POST /api/communications/send
 ```
 
 ### Get Communication History
 ```http
-GET /api/v1/communications/customer/{customer_id}/history
+GET /api/communications/customer/{customer_id}/history
 ```
 
 ---
@@ -408,7 +408,7 @@ const useApi = (url, options = {}) => {
 
 // Usage
 const CustomerList = () => {
-  const { data: customers, loading, error } = useApi('/api/v1/customers/');
+  const { data: customers, loading, error } = useApi('/api/customers/');
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>Error: {error}</div>;
@@ -435,7 +435,7 @@ export const useCustomers = () => {
   const fetchCustomers = async () => {
     loading.value = true;
     try {
-      const response = await fetch('http://localhost:8001/api/v1/customers/');
+      const response = await fetch('http://localhost:8001/api/customers/');
       const data = await response.json();
       customers.value = data.customers;
     } catch (err) {
@@ -446,7 +446,7 @@ export const useCustomers = () => {
   };
 
   const createCustomer = async (customerData) => {
-    const response = await fetch('http://localhost:8001/api/v1/customers/', {
+    const response = await fetch('http://localhost:8001/api/customers/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(customerData)
@@ -486,13 +486,13 @@ curl http://localhost:8001/health
 ```
 
 ### 3. Explore API
-- Visit: `http://localhost:8001/api/v1/docs`
+- Visit: `http://localhost:8001/api/docs`
 - Interactive API documentation with "Try it out" features
 
 ### 4. Test Endpoints
 ```javascript
 // Quick test in browser console
-fetch('http://localhost:8001/api/v1/analytics/summary')
+fetch('http://localhost:8001/api/analytics/summary')
   .then(r => r.json())
   .then(console.log);
 ```
@@ -555,7 +555,7 @@ interface Invoice {
 3. **Rate Limiting**: Currently disabled for development
 4. **Error Handling**: All endpoints return consistent JSON error responses
 5. **Validation**: Automatic validation with detailed error messages
-6. **Documentation**: Live API docs at `/api/v1/docs`
+6. **Documentation**: Live API docs at `/api/docs`
 
 ---
 
@@ -571,7 +571,7 @@ interface Invoice {
 - Add your port to `CORS_ORIGINS` in config
 
 ### API Errors
-- Check the `/api/v1/docs` for exact request formats
+- Check the `/api/docs` for exact request formats
 - Verify request body structure matches schemas
 - Check network tab for detailed error responses
 
@@ -579,9 +579,9 @@ interface Invoice {
 
 ## 📞 Quick Reference
 
-- **Base URL**: `http://localhost:8001/api/v1`
+- **Base URL**: `http://localhost:8001/api`
 - **Health Check**: `http://localhost:8001/health`
-- **API Docs**: `http://localhost:8001/api/v1/docs`
+- **API Docs**: `http://localhost:8001/api/docs`
 - **Server Port**: `8001`
 - **Default Frontend Ports**: `3000`, `3001`, `5173`, `8080`
 

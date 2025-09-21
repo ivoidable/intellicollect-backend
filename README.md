@@ -126,8 +126,8 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
 The API will be available at:
-- **API Documentation**: http://localhost:8000/api/v1/docs
-- **ReDoc**: http://localhost:8000/api/v1/redoc
+- **API Documentation**: http://localhost:8000/api/docs
+- **ReDoc**: http://localhost:8000/api/redoc
 - **Health Check**: http://localhost:8000/health
 
 ## 📊 API Endpoints
@@ -136,12 +136,12 @@ The API will be available at:
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/v1/customers` | GET, POST | Customer management |
-| `/api/v1/invoices` | GET, POST | Invoice operations |
-| `/api/v1/payments` | GET, POST | Payment processing |
-| `/api/v1/risk` | GET, POST | Risk assessment |
-| `/api/v1/communications` | GET, POST | Customer communications |
-| `/api/v1/analytics` | GET | Business analytics |
+| `/api/customers` | GET, POST | Customer management |
+| `/api/invoices` | GET, POST | Invoice operations |
+| `/api/payments` | GET, POST | Payment processing |
+| `/api/risk` | GET, POST | Risk assessment |
+| `/api/communications` | GET, POST | Customer communications |
+| `/api/analytics` | GET | Business analytics |
 
 ### System Endpoints
 
@@ -264,7 +264,7 @@ This project is licensed under the MIT License.
 ## 🆘 Support
 
 For questions or issues:
-1. Check the API documentation at `/api/v1/docs`
+1. Check the API documentation at `/api/docs`
 2. Review the logs for error details
 3. Open an issue in the repository
 
