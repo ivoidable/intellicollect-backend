@@ -77,13 +77,13 @@ def create_application() -> FastAPI:
     if not settings.DEBUG:
         app.add_middleware(
             TrustedHostMiddleware,
-            allowed_hosts=["*.billingintelligence.com", "localhost"]
+            allowed_hosts=["*"]
         )
 
     # 2. CORS
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.CORS_ORIGINS,
+        allow_origins=["*"],
         allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
         allow_methods=["*"],
         allow_headers=["*"],
