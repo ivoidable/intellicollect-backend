@@ -1,8 +1,8 @@
-"""API v1 main router"""
+"""API main router"""
 
 from fastapi import APIRouter
 
-from api.v1.endpoints import (
+from api.endpoints import (
     customers_dynamodb,
     invoices,
     payments,

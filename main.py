@@ -11,7 +11,7 @@ import structlog
 from core.config import settings
 from core.logging import setup_logging, LoggingMiddleware
 from core.exceptions import setup_exception_handlers
-from api.v1.router import api_router
+from api.router import api_router
 from dynamodb.client import dynamodb_client
 from services.aws.event_bridge import EventBridgeService
 # from services.cache import CacheService  # TODO: Create cache service
@@ -66,9 +66,9 @@ def create_application() -> FastAPI:
     app = FastAPI(
         title=settings.APP_NAME,
         version=settings.API_VERSION,
-        docs_url=f"/api/{settings.API_VERSION}/docs" if settings.DEBUG else None,
-        redoc_url=f"/api/{settings.API_VERSION}/redoc" if settings.DEBUG else None,
-        openapi_url=f"/api/{settings.API_VERSION}/openapi.json" if settings.DEBUG else None,
+        docs_url="/api/docs" if settings.DEBUG else None,
+        redoc_url="/api/redoc" if settings.DEBUG else None,
+        openapi_url="/api/openapi.json" if settings.DEBUG else None,
         lifespan=lifespan,
     )
 
@@ -104,7 +104,7 @@ def create_application() -> FastAPI:
     # Include API routers
     app.include_router(
         api_router,
-        prefix=f"/api/{settings.API_VERSION}"
+        prefix="/api"
     )
 
     # Health check endpoint
@@ -122,7 +122,7 @@ def create_application() -> FastAPI:
         return {
             "message": "AWS Billing Intelligence Backend API",
             "version": settings.API_VERSION,
-            "docs": f"/api/{settings.API_VERSION}/docs"
+            "docs": "/api/docs"
         }
 
     return app
