@@ -66,7 +66,7 @@ MAIN_TABLE_SCHEMA = {
     "GlobalSecondaryIndexes": [
         {
             "IndexName": GSINames.GSI1,
-            "Keys": [
+            "KeySchema": [
                 {"AttributeName": "GSI1PK", "KeyType": "HASH"},
                 {"AttributeName": "GSI1SK", "KeyType": "RANGE"}
             ],
@@ -78,7 +78,7 @@ MAIN_TABLE_SCHEMA = {
         },
         {
             "IndexName": GSINames.GSI2,
-            "Keys": [
+            "KeySchema": [
                 {"AttributeName": "GSI2PK", "KeyType": "HASH"},
                 {"AttributeName": "GSI2SK", "KeyType": "RANGE"}
             ],
@@ -90,7 +90,7 @@ MAIN_TABLE_SCHEMA = {
         },
         {
             "IndexName": GSINames.GSI3,
-            "Keys": [
+            "KeySchema": [
                 {"AttributeName": "GSI3PK", "KeyType": "HASH"},
                 {"AttributeName": "GSI3SK", "KeyType": "RANGE"}
             ],
@@ -102,7 +102,7 @@ MAIN_TABLE_SCHEMA = {
         },
         {
             "IndexName": GSINames.GSI4,
-            "Keys": [
+            "KeySchema": [
                 {"AttributeName": "GSI4PK", "KeyType": "HASH"},
                 {"AttributeName": "GSI4SK", "KeyType": "RANGE"}
             ],
@@ -114,7 +114,7 @@ MAIN_TABLE_SCHEMA = {
         },
         {
             "IndexName": GSINames.GSI5,
-            "Keys": [
+            "KeySchema": [
                 {"AttributeName": "GSI5PK", "KeyType": "HASH"},
                 {"AttributeName": "GSI5SK", "KeyType": "RANGE"}
             ],
@@ -152,7 +152,7 @@ AUDIT_TABLE_SCHEMA = {
     "GlobalSecondaryIndexes": [
         {
             "IndexName": "UserIndex",
-            "Keys": [
+            "KeySchema": [
                 {"AttributeName": "UserID", "KeyType": "HASH"},
                 {"AttributeName": "SK", "KeyType": "RANGE"}
             ],
@@ -164,7 +164,7 @@ AUDIT_TABLE_SCHEMA = {
         },
         {
             "IndexName": "EntityIndex",
-            "Keys": [
+            "KeySchema": [
                 {"AttributeName": "EntityType", "KeyType": "HASH"},
                 {"AttributeName": "SK", "KeyType": "RANGE"}
             ],
