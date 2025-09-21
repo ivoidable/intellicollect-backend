@@ -1,0 +1,14 @@
+[
+  {
+    "Source": "billing.invoice.created",
+    "DetailType": "New Invoice Generated",
+    "EventBusName": "billing-events",
+    "Detail": "{\"customer_id\":\"CUST-001\",\"invoice_data\":{\"invoice_id\":\"INV-2024-001\",\"amount\":1500.00,\"due_date\":\"2024-10-18\"}}"
+  },
+  {
+    "Source": "billing.receipt.uploaded",
+    "DetailType": "Payment Receipt Received",
+    "EventBusName": "billing-events",
+    "Detail": "{\"receipt_image_key\":\"receipts/receipt-001.jpg\",\"customer_id\":\"CUST-001\",\"reference_invoice\":\"INV-2024-001\"}"
+  }
+]
